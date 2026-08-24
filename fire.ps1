@@ -1,14 +1,8 @@
-# fire.ps1
-# Animação de fogo em TELA CHEIA no console - Estilo "Energia" (Ordem Paranormal)
-# Requer Windows 10+ (cmd.exe ou PowerShell) para exibir TrueColor ANSI.
+$delayMs        = 25
+$flickerChance  = 90
+$blockChar      = [char]0x2588
+$ESC            = [char]27
 
-# ---- Configurações ----
-$delayMs        = 25    # Velocidade da animação (menor = mais rápido e caótico)
-$flickerChance  = 90    # % de chance da base oscilar no máximo
-$blockChar      = [char]0x2588   # Caractere usado para cada "pixel" (bloco cheio)
-$ESC            = [char]27       # Caractere de escape ANSI
-
-# ---- Habilita cores ANSI (truecolor) no console ----
 Add-Type -Name Console -Namespace Win32 -MemberDefinition @'
 [DllImport("kernel32.dll")]
 public static extern IntPtr GetStdHandle(int nStdHandle);
@@ -22,7 +16,6 @@ $handle = [Win32.Console]::GetStdHandle(-11)
 [Win32.Console]::GetConsoleMode($handle, [ref]$mode) | Out-Null
 [Win32.Console]::SetConsoleMode($handle, $mode -bor 0x0004) | Out-Null
 
-# ---- Paleta Energia Paranormal (Preto -> Roxo -> Rosa -> Ciano -> Verde -> Branco) ----
 function Get-FireColor([double]$t) {
     $stops = @(
         @(0.00,   0,   0,   0),   # Fundo escuro
@@ -53,7 +46,6 @@ for ($i = 0; $i -le $maxHeat; $i++) {
     $palette[$i] = Get-FireColor($i / $maxHeat)
 }
 
-# ---- Prepara console ----
 [console]::CursorVisible = $false
 $host.UI.RawUI.WindowTitle = "Energia Paranormal - Tela Cheia"
 Clear-Host
@@ -67,7 +59,6 @@ $fire = @()
 
 try {
     while ($true) {
-        # Recalcula dimensões caso o usuário mude o tamanho da janela
         $currentWidth  = [console]::WindowWidth
         $currentHeight = [console]::WindowHeight
 
@@ -75,7 +66,6 @@ try {
             $width  = $currentWidth
             $height = $currentHeight
             
-            # Remove barras de rolagem do terminal ajustando o BufferSize
             try {
                 $host.UI.RawUI.BufferSize = New-Object System.Management.Automation.Host.Size($width, $height)
             } catch {}
@@ -88,7 +78,6 @@ try {
 
         $bottomRow = $height - 1
 
-        # Aquece a base (linha inferior completa)
         for ($x = 0; $x -lt $width; $x++) {
             if ($rnd.Next(100) -lt $flickerChance) {
                 $fire[$bottomRow * $width + $x] = $maxHeat
@@ -97,7 +86,6 @@ try {
             }
         }
 
-        # Propaga o fogo para cima
         for ($y = 1; $y -lt $height; $y++) {
             $rowOffset = $y * $width
             $aboveOffset = $rowOffset - $width
@@ -118,9 +106,8 @@ try {
             }
         }
 
-        # Renderiza a tela
         [void]$sb.Clear()
-        [void]$sb.Append("$ESC[H") # Reseta o cursor para o topo (0,0)
+        [void]$sb.Append("$ESC[H")
         
         $prevColor = ""
         for ($y = 0; $y -lt $height; $y++) {
